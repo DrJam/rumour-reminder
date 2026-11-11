@@ -80,6 +80,18 @@ public class RumoursManager {
 
     public boolean isRumourCompleted = false;
 
+    /**
+     * True after a login until the active rumour is confirmed in game (whistle or
+     * guild dialog). Rumours can change on another client (e.g. mobile), which this
+     * plugin cannot see, so the saved rumour may be stale.
+     */
+    @Getter
+    private boolean needsWhistleCheck = false;
+
+    public void setNeedsWhistleCheck(boolean needsWhistleCheck) {
+        this.needsWhistleCheck = needsWhistleCheck;
+    }
+
     @Getter
     @Setter
     private RumourInfoBox infoBox;
@@ -89,6 +101,9 @@ public class RumoursManager {
     }
 
     public Integer getHighlightNpcId() {
+        if (needsWhistleCheck) {
+            return null;
+        }
         if (!isRumourCompleted) {
             return null;
         }
@@ -215,19 +230,22 @@ public class RumoursManager {
             return;
         }
 
-        if (activeRumour != null) {
+        if (needsWhistleCheck) {
+            infoBox = new RumourInfoBox(itemManager.getImage(ItemID.BASIC_QUETZAL_WHISTLE), plugin, activeRumour,
+                    rumourGilman, rumourAco, rumourCervus, rumourOrnus, rumourTeco, rumourWolf, false, true);
+        } else if (activeRumour != null) {
             HunterCreature rumourCreature = HunterCreature
                     .getHunterCreatureFromCreatureName(activeRumour.toLowerCase());
             if (rumourCreature == null) {
                 return;
             }
             infoBox = new RumourInfoBox(itemManager.getImage(rumourCreature.targetItemID), plugin, activeRumour,
-                    rumourGilman, rumourAco, rumourCervus, rumourOrnus, rumourTeco, rumourWolf, isRumourCompleted);
+                    rumourGilman, rumourAco, rumourCervus, rumourOrnus, rumourTeco, rumourWolf, isRumourCompleted, false);
 
         } else {
             infoBox = new RumourInfoBox(itemManager.getImage(ItemID.GUILD_HUNTER_HEADWEAR), plugin, activeRumour,
                     rumourGilman,
-                    rumourAco, rumourCervus, rumourOrnus, rumourTeco, rumourWolf, isRumourCompleted);
+                    rumourAco, rumourCervus, rumourOrnus, rumourTeco, rumourWolf, isRumourCompleted, false);
 
         }
         infoBoxManager.addInfoBox(infoBox);
@@ -275,6 +293,7 @@ public class RumoursManager {
         } else {
             this.activeRumour = activeMacher.group(1);
         }
+        this.needsWhistleCheck = false;
         saveAllStoredRumours();
         updateRumourCompleted();
         updateInfoBox();
@@ -321,6 +340,12 @@ public class RumoursManager {
                 && rumourGilman != null;
         var isRumourConfirmation = hunterTalking != null && hunterReferenced != null && creature != null;
         var isTempAssignment = activeRumour == null && getRumour(hunterTalking) != null;
+
+        if (isRumourCompletion || isRumourConfirmation
+                || (isAssignmantOrGilman && !isGilmanRemembering)) {
+            // Each of these tells us the current active rumour directly.
+            this.needsWhistleCheck = false;
+        }
 
         if (isRumourCompletion) {
             rumourCompleted(hunterTalking);

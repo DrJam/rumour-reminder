@@ -75,6 +75,7 @@ public class RumourReminderPlugin extends Plugin {
 	protected void startUp() throws Exception {
 		npcOverlayService.registerHighlighter(this::highlighter);
 		overlayManager.add(overlay);
+		rumoursManager.setNeedsWhistleCheck(config.checkWhistleOnLogin());
 	}
 
 	@Override
@@ -94,6 +95,13 @@ public class RumourReminderPlugin extends Plugin {
 		if (!configChanged.getGroup().equals(RumourReminderConfig.CONFIG_GROUP)) {
 			return;
 		}
+		if (configChanged.getKey().equals("checkWhistleOnLogin") && !config.checkWhistleOnLogin()
+				&& rumoursManager.isNeedsWhistleCheck()) {
+			rumoursManager.setNeedsWhistleCheck(false);
+			if (rumoursManager.isInfoBoxVisible()) {
+				rumoursManager.updateFromSavedInfo();
+			}
+		}
 		npcOverlayService.rebuild();
 	}
 
@@ -102,6 +110,9 @@ public class RumourReminderPlugin extends Plugin {
 		if (event.getGameState() == GameState.LOGGED_IN) {
 		} else if (event.getGameState() == GameState.LOGIN_SCREEN) {
 			rumoursManager.removeInfoBox();
+			// Logging in on another client (e.g. mobile) sends this one to the login
+			// screen, so any login after this point may follow rumour changes we never saw.
+			rumoursManager.setNeedsWhistleCheck(config.checkWhistleOnLogin());
 			currentLocation = null;
 			xpInitialised = false;
 		}
@@ -194,7 +205,10 @@ public class RumourReminderPlugin extends Plugin {
 				(currentRegionId == HUNTER_GUILD_BASEMENT_REGION_ID
 						|| currentRegionId == HUNTER_GUILD_GROUND_FLOOR_REGION_ID);
 
-		if (loggingInToGuild || enteringGuild) {
+		var justLoggedIn = previousLocation == null;
+
+		if (loggingInToGuild || enteringGuild
+				|| (justLoggedIn && rumoursManager.isNeedsWhistleCheck())) {
 			rumoursManager.updateFromSavedInfo();
 			npcOverlayService.rebuild();
 		}
