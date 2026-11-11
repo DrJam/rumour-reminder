@@ -15,6 +15,7 @@ class RumourInfoBox extends InfoBox {
     private String rumourWolf = null;
     private String activeRumour = null;
     private boolean isRumourCompleted = false;
+    private boolean needsWhistleCheck = false;
 
     RumourInfoBox(
             BufferedImage image,
@@ -26,7 +27,8 @@ class RumourInfoBox extends InfoBox {
             String rumourOrnus,
             String rumourTeco,
             String rumourWolf,
-            boolean isRumourCompleted) {
+            boolean isRumourCompleted,
+            boolean needsWhistleCheck) {
         super(image, plugin);
         this.activeRumour = activeRumour != null ? activeRumour.toLowerCase() : null;
         this.rumourGilman = rumourGilman != null ? rumourGilman.toLowerCase() : null;
@@ -36,10 +38,14 @@ class RumourInfoBox extends InfoBox {
         this.rumourTeco = rumourTeco != null ? rumourTeco.toLowerCase() : null;
         this.rumourWolf = rumourWolf != null ? rumourWolf.toLowerCase() : null;
         this.isRumourCompleted = isRumourCompleted;
+        this.needsWhistleCheck = needsWhistleCheck;
     }
 
     @Override
     public String getText() {
+        if (this.needsWhistleCheck) {
+            return "?";
+        }
         if (this.isRumourCompleted) {
             return "Done";
         }
@@ -48,6 +54,9 @@ class RumourInfoBox extends InfoBox {
 
     @Override
     public Color getTextColor() {
+        if (this.needsWhistleCheck) {
+            return Color.YELLOW;
+        }
         if (this.isRumourCompleted) {
             return Color.GREEN;
         }
@@ -57,6 +66,20 @@ class RumourInfoBox extends InfoBox {
     @Override
     public String getTooltip() {
         StringBuilder sb = new StringBuilder();
+
+        if (needsWhistleCheck) {
+            sb.append(ColorUtil.wrapWithColorTag("Check your rumour", Color.YELLOW));
+            sb.append("</br>Use your quetzal whistle's Rumour option before hunting.");
+            sb.append("</br>Your rumour may have changed on another client.");
+            if (activeRumour != null) {
+                HunterCreature saved = HunterCreature.getHunterCreatureFromCreatureName(activeRumour);
+                if (saved != null) {
+                    sb.append("</br>");
+                    sb.append(ColorUtil.wrapWithColorTag("Last known: " + saved.name, Color.ORANGE));
+                }
+            }
+            return sb.toString();
+        }
 
         HunterCreature activeCreature = null;
         if (activeRumour != null) {

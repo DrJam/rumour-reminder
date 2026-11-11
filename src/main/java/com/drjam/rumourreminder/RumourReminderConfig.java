@@ -23,6 +23,16 @@ public interface RumourReminderConfig extends Config {
 		return true;
 	}
 
+	@ConfigItem(
+			keyName = "checkWhistleOnLogin",
+			name = "Check whistle on login",
+			description = "After each login, treat the saved rumour as unconfirmed until you use your quetzal whistle's Rumour option or talk to a guild hunter. Useful if you also play on mobile or another client, where the plugin can't see rumour changes.",
+			position = 1
+	)
+	default boolean checkWhistleOnLogin() {
+		return false;
+	}
+
 	@ConfigSection(
 			name = "Turn In Style",
 			description = "Style for the turn in hunter",

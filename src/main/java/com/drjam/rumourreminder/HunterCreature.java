@@ -56,7 +56,7 @@ public enum HunterCreature {
             0, ItemID.BLACK_BUTTERFLY_WING),
     ORANGE_SALAMANDER("Orange salamander",
             "Net trap (small net, rope)",
-            "Uzer Hunter Area, Necropolis Hunter Area (AKP)",
+            "Uzer Hunter Area (DLQ), Necropolis Hunter Area (AKP)",
             0, ItemID.ORANGE_SALAMANDER_CLAW),
     RAZOR_BACKED_KEBBIT("Razor-backed kebbit",
             "Noose wand",
