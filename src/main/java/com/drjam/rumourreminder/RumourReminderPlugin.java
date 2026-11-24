@@ -180,8 +180,6 @@ public class RumourReminderPlugin extends Plugin {
 			return;
 		}
 
-		rumoursManager.checkTimeout();
-
 		var previousLocation = currentLocation;
 		currentLocation = client.getLocalPlayer().getWorldLocation();
 		var currentRegionId = currentLocation.getRegionID();
@@ -197,7 +195,6 @@ public class RumourReminderPlugin extends Plugin {
 						|| currentRegionId == HUNTER_GUILD_GROUND_FLOOR_REGION_ID);
 
 		if (loggingInToGuild || enteringGuild) {
-			rumoursManager.resetTimeout();
 			rumoursManager.updateFromSavedInfo();
 			npcOverlayService.rebuild();
 		}
@@ -207,7 +204,6 @@ public class RumourReminderPlugin extends Plugin {
 	@Subscribe
 	void onStatChanged(StatChanged event) {
 		if (event.getSkill() == Skill.HUNTER) {
-			rumoursManager.resetTimeout();
 			if (!xpInitialised) {
 				xpInitialised = true;
 				return;
@@ -229,9 +225,14 @@ public class RumourReminderPlugin extends Plugin {
 	}
 
 	private HighlightedNpc highlighter(NPC npc) {
-		// Turn-in hunter (only once rumour is completed)
+		Integer npcId = npc.getId();
 		Integer highlightId = rumoursManager.getHighlightNpcId();
-		if (highlightId != null && config.highlightTurnInhunter() && npc.getId() == highlightId) {
+
+		if (highlightId == null) {
+			return null;
+		}
+
+		if (config.highlightTurnInhunter() && npcId.equals(highlightId)) {
 			return HighlightedNpc
 					.builder()
 					.npc(npc)
@@ -243,24 +244,6 @@ public class RumourReminderPlugin extends Plugin {
 					.borderWidth((float) config.turnInBorderWidth())
 					.outlineFeather(config.turnInOutlineFeather())
 					.build();
-		}
-
-		// Target creature (while the rumour is still active and not yet caught)
-		if (config.highlightTargetCreature() && !rumoursManager.isRumourCompleted) {
-			HunterCreature creature = rumoursManager.getActiveCreature();
-			if (creature != null && creature.matchesNpcName(npc.getName())) {
-				return HighlightedNpc
-						.builder()
-						.npc(npc)
-						.highlightColor(config.targetColor())
-						.fillColor(config.targetFillColor())
-						.hull(config.targetHull())
-						.tile(config.targetTile())
-						.outline(config.targetOutline())
-						.borderWidth((float) config.targetBorderWidth())
-						.outlineFeather(config.targetOutlineFeather())
-						.build();
-			}
 		}
 
 		return null;
